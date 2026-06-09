@@ -24,13 +24,22 @@
         const utilisateur = window.location.hostname.split('.')[0];
         const depot = window.location.pathname.split('/')[1];
 
-        const urlApi = `https://github.com{utilisateur}/${depot}/contents/${nomDossierLivres}`;
+        const urlApi = `https://api.github.com/repos/${utilisateur}/${depot}/contents/${nomDossierLivres}`;
 
         async function chargerLivres() {
+            const listeUl = document.getElementById('liste-livres');
+
+            if (window.location.protocol === 'file:' || !utilisateur || !depot) {
+                listeUl.innerHTML = `<li>Impossible de charger automatiquement les livres depuis un fichier local. Servez cette page depuis GitHub Pages ou un serveur web, ou ajoutez les livres manuellement dans le HTML.</li>`;
+                return;
+            }
+
             try {
                 const reponse = await fetch(urlApi);
+                if (!reponse.ok) {
+                    throw new Error(`Statut ${reponse.status}`);
+                }
                 const fichiers = await reponse.json();
-                const listeUl = document.getElementById('liste-livres');
                 listeUl.innerHTML = ''; 
 
                 // On filtre pour ne prendre que les ebooks
