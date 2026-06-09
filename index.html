@@ -14,40 +14,8 @@
 <body>
 
     <h1>📚 Ma Bibliothèque Privée</h1>
-    <ul id="liste-livres">Lecture du dossier des livres...</ul>
-
-    <script src="books.js"></script>
-    <script>
-        const nomDossierLivres = "dossier-livres";
-
-        function afficherMessage(message) {
-            document.getElementById('liste-livres').innerHTML = `<li>${message}</li>`;
-        }
-
-        function afficherLivres(livres) {
-            const listeUl = document.getElementById('liste-livres');
-            listeUl.innerHTML = '';
-
-            livres.forEach(livre => {
-                const li = document.createElement('li');
-                const titrePropre = livre.replace('.epub', '').replace(/[-_]/g, ' ');
-                li.innerHTML = `<a href="${nomDossierLivres}/${livre}">${titrePropre}</a>`;
-                listeUl.appendChild(li);
-            });
-        }
-
-        function chargerLivres() {
-            const livres = window.livresManuels || [];
-
-            if (livres.length === 0) {
-                afficherMessage(`Aucun livre trouvé dans le dossier "${nomDossierLivres}". Ajoutez les noms des fichiers EPUB dans "books.js".`);
-                return;
-            }
-
-            afficherLivres(livres);
-        }
-
-        chargerLivres();
-    </script>
+    <ul id="liste-livres">
+        <li><a href="dossier-livres/pg2701-images-3.epub">pg2701 images 3</a></li>
+    </ul>
 </body>
 </html>
