@@ -18,11 +18,7 @@
 
     <script src="books.js"></script>
     <script>
-        // CONFIGURATION : Mettez ici le nom exact de votre dossier de livres séparé
         const nomDossierLivres = "dossier-livres";
-        const githubUtilisateur = "Thimeo-dev";
-        const githubDepot = "Ebook-Cloud";
-        const urlApi = `https://api.github.com/repos/${githubUtilisateur}/${githubDepot}/contents/${nomDossierLivres}`;
 
         function afficherMessage(message) {
             document.getElementById('liste-livres').innerHTML = `<li>${message}</li>`;
@@ -40,36 +36,11 @@
             });
         }
 
-        function filtrerEpubs(noms) {
-            return noms.filter(nom => nom.toLowerCase().endsWith('.epub'));
-        }
-
-        async function fetchGithubLivres() {
-            const response = await fetch(urlApi);
-            if (!response.ok) {
-                throw new Error(`Statut ${response.status}`);
-            }
-            const items = await response.json();
-            return filtrerEpubs(items.map(item => item.name));
-        }
-
-        async function chargerLivres() {
-            let livres = [];
-
-            if (window.location.protocol === 'file:' || window.location.hostname === 'localhost') {
-                // Sur Kobo ou en local, on utilise la liste manuelle définie dans books.js
-                livres = window.livresManuels || [];
-            } else {
-                try {
-                    livres = await fetchGithubLivres();
-                } catch (erreur) {
-                    console.warn('GitHub API inaccessible, utilisation de la liste locale si disponible.', erreur);
-                    livres = window.livresManuels || [];
-                }
-            }
+        function chargerLivres() {
+            const livres = window.livresManuels || [];
 
             if (livres.length === 0) {
-                afficherMessage(`Aucun livre trouvé dans le dossier "${nomDossierLivres}". Ajoutez les fichiers EPUB dans "books.js" si nécessaire.`);
+                afficherMessage(`Aucun livre trouvé dans le dossier "${nomDossierLivres}". Ajoutez les noms des fichiers EPUB dans "books.js".`);
                 return;
             }
 
