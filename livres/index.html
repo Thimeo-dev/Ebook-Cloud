@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Mon Dossier Livres</title>
+    <style>
+        body { font-family: sans-serif; padding: 30px; font-size: 20px; line-height: 1.6; }
+        h1 { border-bottom: 2px solid #000; padding-bottom: 10px; }
+        ul { list-style-type: none; padding: 0; }
+        li { margin-bottom: 20px; padding: 10px; border-bottom: 1px solid #eee; }
+        a { color: #0056b3; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h1>📚 Mes Livres Numériques</h1>
+    <ul id="liste-livres">Chargement de la liste...</ul>
+
+    <script>
+        // CONFIGURATION AUTOMATIQUE VIA L'URL DE LA PAGE
+        const pathSegments = window.location.pathname.split('/');
+        const utilisateur = window.location.hostname.split('.')[0];
+        const depot = pathSegments[1];
+        const nomDossier = "livres"; 
+
+        const urlApi = `https://github.com{utilisateur}/${depot}/contents/${nomDossier}`;
+
+        async function chargerLivres() {
+            try {
+                const reponse = await fetch(urlApi);
+                const fichiers = await reponse.json();
+                const listeUl = document.getElementById('liste-livres');
+                listeUl.innerHTML = ''; 
+
+                const livres = fichiers.filter(f => f.name.endsWith('.epub'));
+
+                if (livres.length === 0) {
+                    listeUl.innerHTML = '<li>Aucun livre au format .epub dans ce dossier.</li>';
+                    return;
+                }
+
+                livres.forEach(livre => {
+                    const li = document.createElement('li');
+                    const titrePropre = livre.name.replace('.epub', '').replace(/[-_]/g, ' ');
+                    li.innerHTML = `<a href="${livre.name}">${titrePropre}</a>`;
+                    listeUl.appendChild(li);
+                });
+            } catch (erreur) {
+                document.getElementById('liste-livres').innerHTML = '<li>Erreur : Impossible de lire le dossier.</li>';
+            }
+        }
+
+        chargerLivres();
+    </script>
+</body>
+</html>
