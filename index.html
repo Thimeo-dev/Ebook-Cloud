@@ -18,50 +18,84 @@
 
     <script>
         // CONFIGURATION : Mettez ici le nom exact de votre dossier de livres séparé
-        const nomDossierLivres = "dossier-livres"; 
+        const nomDossierLivres = "dossier-livres";
 
         // Détection automatique de vos informations GitHub via l'URL
         const utilisateur = window.location.hostname.split('.')[0];
         const depot = window.location.pathname.split('/')[1];
-
         const urlApi = `https://api.github.com/repos/${utilisateur}/${depot}/contents/${nomDossierLivres}`;
+
+        function afficherMessage(message) {
+            document.getElementById('liste-livres').innerHTML = `<li>${message}</li>`;
+        }
+
+        function afficherLivres(livres) {
+            const listeUl = document.getElementById('liste-livres');
+            listeUl.innerHTML = '';
+
+            livres.forEach(livre => {
+                const li = document.createElement('li');
+                const titrePropre = livre.replace('.epub', '').replace(/[-_]/g, ' ');
+                li.innerHTML = `<a href="${nomDossierLivres}/${livre}">${titrePropre}</a>`;
+                listeUl.appendChild(li);
+            });
+        }
+
+        function filtrerEpubs(noms) {
+            return noms.filter(nom => nom.toLowerCase().endsWith('.epub'));
+        }
+
+        async function fetchGithubLivres() {
+            const response = await fetch(urlApi);
+            if (!response.ok) {
+                throw new Error(`Statut ${response.status}`);
+            }
+            const items = await response.json();
+            return filtrerEpubs(items.map(item => item.name));
+        }
+
+        async function fetchLocalDirectoryLivres() {
+            const response = await fetch(`${nomDossierLivres}/`);
+            if (!response.ok) {
+                throw new Error(`Statut ${response.status}`);
+            }
+            const html = await response.text();
+            const parser = new DOMParser();
+            const documentHtml = parser.parseFromString(html, 'text/html');
+            const liens = Array.from(documentHtml.querySelectorAll('a'));
+            return filtrerEpubs(liens
+                .map(a => a.getAttribute('href') || '')
+                .filter(href => href && !href.startsWith('..') && !href.endsWith('/'))
+                .map(href => decodeURIComponent(href)));
+        }
 
         async function chargerLivres() {
             const listeUl = document.getElementById('liste-livres');
 
-            if (window.location.protocol === 'file:' || !utilisateur || !depot) {
-                listeUl.innerHTML = `<li>Impossible de charger automatiquement les livres depuis un fichier local. Servez cette page depuis GitHub Pages ou un serveur web, ou ajoutez les livres manuellement dans le HTML.</li>`;
+            if (window.location.protocol === 'file:') {
+                afficherMessage('Ouvrez cette page via un serveur HTTP pour lire les livres du dossier. Par exemple : python3 -m http.server');
                 return;
             }
 
             try {
-                const reponse = await fetch(urlApi);
-                if (!reponse.ok) {
-                    throw new Error(`Statut ${reponse.status}`);
+                let livres = [];
+                if (window.location.hostname.includes('github.io') || (utilisateur && depot)) {
+                    livres = await fetchGithubLivres();
                 }
-                const fichiers = await reponse.json();
-                listeUl.innerHTML = ''; 
-
-                // On filtre pour ne prendre que les ebooks
-                const livres = fichiers.filter(f => f.name.endsWith('.epub'));
 
                 if (livres.length === 0) {
-                    listeUl.innerHTML = `<li>Aucun livre trouvé dans le dossier "${nomDossierLivres}".</li>`;
+                    livres = await fetchLocalDirectoryLivres();
+                }
+
+                if (livres.length === 0) {
+                    afficherMessage(`Aucun livre trouvé dans le dossier "${nomDossierLivres}".`);
                     return;
                 }
 
-                livres.forEach(livre => {
-                    const li = document.createElement('li');
-                    
-                    // Rend le titre joli à lire (enlève l'extension et remplace les tirets)
-                    const titrePropre = livre.name.replace('.epub', '').replace(/[-_]/g, ' ');
-                    
-                    // Crée le lien qui pointe correctement vers le dossier séparé
-                    li.innerHTML = `<a href="${nomDossierLivres}/${livre.name}">${titrePropre}</a>`;
-                    listeUl.appendChild(li);
-                });
+                afficherLivres(livres);
             } catch (erreur) {
-                document.getElementById('liste-livres').innerHTML = '<li>Erreur : Impossible d\'accéder au dossier de livres. Vérifiez le nom.</li>';
+                afficherMessage('Impossible de récupérer les livres depuis le dossier. Vérifiez que le dossier existe et que le serveur HTTP renvoie un index de dossier.');
+                console.error(erreur);
             }
         }
 
