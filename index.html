@@ -16,6 +16,7 @@
     <h1>📚 Ma Bibliothèque Privée</h1>
     <ul id="liste-livres">Lecture du dossier des livres...</ul>
 
+    <script src="books.js"></script>
     <script>
         // CONFIGURATION : Mettez ici le nom exact de votre dossier de livres séparé
         const nomDossierLivres = "dossier-livres";
@@ -53,24 +54,26 @@
         }
 
         async function chargerLivres() {
-            if (window.location.protocol === 'file:') {
-                afficherMessage('Ouvrez cette page via HTTP ou hébergez-la en ligne pour que lister les livres fonctionne correctement.');
+            let livres = [];
+
+            if (window.location.protocol === 'file:' || window.location.hostname === 'localhost') {
+                // Sur Kobo ou en local, on utilise la liste manuelle définie dans books.js
+                livres = window.livresManuels || [];
+            } else {
+                try {
+                    livres = await fetchGithubLivres();
+                } catch (erreur) {
+                    console.warn('GitHub API inaccessible, utilisation de la liste locale si disponible.', erreur);
+                    livres = window.livresManuels || [];
+                }
+            }
+
+            if (livres.length === 0) {
+                afficherMessage(`Aucun livre trouvé dans le dossier "${nomDossierLivres}". Ajoutez les fichiers EPUB dans "books.js" si nécessaire.`);
                 return;
             }
 
-            try {
-                const livres = await fetchGithubLivres();
-
-                if (livres.length === 0) {
-                    afficherMessage(`Aucun livre trouvé dans le dossier "${nomDossierLivres}".`);
-                    return;
-                }
-
-                afficherLivres(livres);
-            } catch (erreur) {
-                afficherMessage('Impossible de récupérer les livres depuis GitHub. Vérifiez le nom du dépôt, du dossier et que le dépôt est public.');
-                console.error(erreur);
-            }
+            afficherLivres(livres);
         }
 
         chargerLivres();
